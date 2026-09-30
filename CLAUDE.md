@@ -17,7 +17,10 @@ packages/mailer/         silnik wysyłki, warmup, deliverability — Python
 packages/shared/         wspólne typy/schematy Pydantic używane przez apps/api i packages/*
 ```
 
-Każdy katalog `apps/*` i `packages/*` ma własny, krótki `CLAUDE.md` ze szczegółami dot. tego modułu — nowa sesja pracująca nad jednym modułem nie musi czytać całego repo.
+Każdy katalog `apps/*` i `packages/*` ma własny, krótki `CLAUDE.md` ze szczegółami dot. tego modułu.
+To pozwala pracować nad jednym modułem bez czytania całego repo -- dotyczy to zarówno tej samej
+rozmowy wracającej do kontekstu, jak i ewentualnej nowej sesji, gdyby projekt kiedyś urósł na tyle,
+że jedna rozmowa przestanie się opłacać.
 
 ## Twarde zasady (obowiązują w każdym module, bez wyjątków)
 
@@ -41,7 +44,13 @@ Każdy katalog `apps/*` i `packages/*` ma własny, krótki `CLAUDE.md` ze szczeg
 
 ## Status budowy
 
-Projekt budowany etapami jako osobne sesje Claude Code (patrz plan): Fundament → Discovery Engine → Enrichment Engine → Dashboard → Mailer Engine → Deliverability hardening → Skalowanie/i18n. Aktualny etap i to, co już działa, sprawdzaj w `git log` i w tym pliku (aktualizowany na końcu każdego etapu).
+Projekt budowany etapami (patrz `ROADMAP.md`): Fundament → Discovery Engine → Enrichment Engine →
+Dashboard → Mailer Engine → Deliverability hardening → Skalowanie/i18n. W praktyce budowane w jednej
+ciągłej rozmowie z Claude, z commitem na koniec każdego etapu -- nie w osobnych sesjach per moduł
+(ten podział miałby sens dopiero przy dużo większej skali; na razie jedna rozmowa z dobrze
+poscopowanymi CLAUDE.md jest szybsza i tańsza w tokenach niż odświeżanie kontekstu w nowych sesjach).
+Aktualny etap i to, co już działa, sprawdzaj w `git log` i w tym pliku (aktualizowany na końcu
+każdego etapu).
 
 **Etap 0 (Fundament): gotowy.** Szkielet repo, Docker Compose (Postgres + FastAPI + Next.js), schemat DB
 z pierwszą migracją Alembic, `GET /health` i `GET /companies`, strona startowa dashboardu sprawdzająca

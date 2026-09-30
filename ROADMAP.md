@@ -6,8 +6,10 @@ Ten plik to żywa mapa postępu projektu — aktualizowana na koniec każdego et
 ## Jak czytać
 
 - ✅ gotowe i zweryfikowane · 🔄 w trakcie · ⬜ zaplanowane, nierozpoczęte · ⛔ zablokowane (czeka na decyzję/dane od użytkownika)
-- Każda faza = osobna sesja Claude Code (małe, skoncentrowane konteksty — patrz root `CLAUDE.md` sekcja "Plan pracy z Claude Code" w oryginalnym planie).
-- Każda faza kończy się realną weryfikacją (uruchomieniem czegoś, nie tylko napisaniem kodu), zanim przejdziemy dalej.
+- Każda faza kończy się realną weryfikacją (uruchomieniem czegoś, nie tylko napisaniem kodu), zanim przejdziemy dalej, i osobnym commitem.
+- Fazy budowane są w jednej ciągłej rozmowie z Claude (nie w osobnych sesjach per moduł) -- świadoma
+  decyzja pod kątem szybkości i kosztu tokenów przy tej skali projektu, patrz root `CLAUDE.md` →
+  "Status budowy".
 
 ---
 
