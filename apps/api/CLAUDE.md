@@ -28,8 +28,22 @@ Albo przez `docker compose up` z roota repo (patrz `docker-compose.yml`).
 Te dwie ostatnie tabele implementują twarde zasady compliance opisane w root `CLAUDE.md` — nie
 omijać ich przy budowie `packages/mailer`.
 
+## Discovery (Faza 1) — zbudowane
+
+- `POST /discovery/run` `{country, city, industry, sources: ["osm", "google_places"]}` — uruchamia
+  konektory z `packages/discovery` i zapisuje wyniki przez `app/services/discovery_service.py`.
+  Zwraca `{found, created, skipped_duplicate, skipped_sources}`. Źródło bez skonfigurowanego klucza
+  (np. Google Places bez `GOOGLE_PLACES_API_KEY`) ląduje w `skipped_sources`, nie wywraca requestu.
+- `GET /discovery/industries` — lista obsługiwanych branż (klucz + etykieta PL).
+- `GET /companies/export.csv` — eksport z tymi samymi filtrami co `GET /companies`. Zarejestrowany
+  PRZED `GET /companies/{company_id}` w pliku routera — inna kolejność powoduje, że FastAPI próbuje
+  sparsować `"export.csv"` jako UUID i zwraca 422 zamiast trafić do handlera eksportu.
+- `app/services/discovery_service.py::normalize_domain` — dedup po `(source, source_id)` i po
+  `normalized_domain` między źródłami. Gdy ten kod zacznie być potrzebny także w `packages/mailer`
+  (Faza 4, przy suppression liście), przenieść go do `packages/shared` — na razie zostaje lokalnie
+  (patrz zasada projektu o unikaniu przedwczesnych abstrakcji).
+
 ## Co jeszcze nie istnieje (kolejne etapy)
 
-Endpoints do tworzenia/edycji kampanii, uruchamiania discovery/enrichment/wysyłki oraz logika
-`packages/discovery`, `packages/enrichment`, `packages/mailer` — to osobne etapy z planu
-(patrz root `CLAUDE.md`). Obecny etap dostarcza tylko szkielet + `GET /companies`, `GET /health`.
+Rejestry firm (CEIDG/KRS), `website_checker`, `email_finder`, scoring — to `packages/enrichment`
+(Faza 2). Endpointy do kampanii/wysyłki — `packages/mailer` (Faza 4). Pełny UI dashboardu — Faza 3.

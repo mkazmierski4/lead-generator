@@ -20,3 +20,25 @@ Planowane konektory (kolejność wg planu):
   (patrz root `CLAUDE.md`, zasada 6).
 - Każdy wynik musi mieć `source` + `source_id`, żeby `apps/api` mógł zrobić dedup przy zapisie.
 - Klucze API (np. `GOOGLE_PLACES_API_KEY`) tylko przez zmienne środowiskowe (`.env`), nigdy hardkodowane.
+
+## Status: Discovery Engine (Faza 1) zbudowany
+
+- `osm.py` — konektor Overpass API, geokodowanie przez Nominatim (`geocoding.py`). Zweryfikowany
+  na żywych danych (527 fryzjerów w Krakowie, w tym wiele bez strony; kwiaciarnie w Zakopanem
+  zapisane i poprawnie odrzucone jako duplikat przy powtórnym uruchomieniu).
+- `google_places.py` — gotowy, ale nieaktywny bez `GOOGLE_PLACES_API_KEY` w `.env`; wtedy
+  `run_discovery` po prostu pomija to źródło (`skipped_sources`), nie wywala całego runu.
+- **Uwaga o stabilności:** darmowa, publiczna instancja `overpass-api.de` bywa niestabilna pod
+  obciążeniem (widziane: 406, 504, connect timeout przy zbyt częstych zapytaniach pod rząd).
+  `osm.py` próbuje po kolei kilku mirrorów (`OVERPASS_URLS`). Nie odpytywać jej w pętli/testach
+  bez potrzeby — to współdzielony darmowy zasób.
+- `industries.py` — startowy zestaw 8 branż (fryzjer, salon kosmetyczny, restauracja, kawiarnia,
+  warsztat samochodowy, dentysta, kwiaciarnia, piekarnia). Dodawanie kolejnej branży = jeden wpis
+  w `INDUSTRIES` z tagiem OSM + typem Google Places, o ile jest to dobrze otagowane w OSM.
+- Zapis/dedup żyje w `apps/api/app/services/discovery_service.py` (nie tutaj) — dedup po
+  `(source, source_id)` ORAZ po `normalized_domain` między źródłami (patrz `apps/api/CLAUDE.md`).
+
+## Kolejny krok (Faza 2 — Enrichment)
+
+Rejestry firm (CEIDG/KRS) do `registered_at`, `website_checker` i `email_finder` — to już zakres
+`packages/enrichment`, nie tego modułu.

@@ -45,8 +45,15 @@ Projekt budowany etapami jako osobne sesje Claude Code (patrz plan): Fundament �
 
 **Etap 0 (Fundament): gotowy.** Szkielet repo, Docker Compose (Postgres + FastAPI + Next.js), schemat DB
 z pierwszą migracją Alembic, `GET /health` i `GET /companies`, strona startowa dashboardu sprawdzająca
-połączenie z API. Zweryfikowane end-to-end przez `docker compose up` (patrz `apps/api/CLAUDE.md` i
-`apps/web/CLAUDE.md` po szczegóły uruchomienia).
+połączenie z API. Zweryfikowane end-to-end przez `docker compose up`.
 
-**Następny etap: Discovery Engine** (patrz `packages/discovery/CLAUDE.md`) — konektor Google Places +
-OSM, zapis leadów do bazy z dedupem po `(source, source_id)`.
+**Etap 1 (Discovery Engine): gotowy.** Konektory OSM Overpass (aktywny, bez klucza) i Google Places
+(gotowy, aktywuje się po dodaniu `GOOGLE_PLACES_API_KEY` do `.env`), 8 startowych branż, zapis do bazy
+z dedupem po `(source, source_id)` i po `normalized_domain` między źródłami, `POST /discovery/run`,
+`GET /discovery/industries`, `GET /companies/export.csv`. Zweryfikowane na żywych danych (fryzjerzy w
+Krakowie, kwiaciarnie w Zakopanem — część bez strony, zero duplikatów przy powtórnym uruchomieniu,
+awaria jednego źródła nie wywala całego runu). Szczegóły: `packages/discovery/CLAUDE.md`,
+`apps/api/CLAUDE.md`.
+
+**Następny etap: Enrichment Engine** (patrz `packages/enrichment/CLAUDE.md`) — `website_checker`,
+`email_finder`, konektor CEIDG/KRS, scoring.

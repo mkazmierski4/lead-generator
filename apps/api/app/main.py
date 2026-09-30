@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import companies
+from app.routers import companies, discovery
 
 app = FastAPI(title="Lead Generation API")
 
@@ -13,6 +13,7 @@ app.add_middleware(
 )
 
 app.include_router(companies.router)
+app.include_router(discovery.router)
 
 
 @app.get("/health")

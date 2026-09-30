@@ -22,22 +22,25 @@ widzi API przez sieć Dockera.
 
 ---
 
-## Faza 1 — Discovery Engine ⬜
+## Faza 1 — Discovery Engine ✅
 
 Cel: znaleźć firmy wg lokalizacji + branży i zapisać je do bazy bez duplikatów.
 
-- [ ] Konektor Google Places API (Text Search) — pierwsze źródło, jeden kraj (Polska) na start.
-- [ ] Konektor OpenStreetMap Overpass API — darmowe uzupełnienie.
-- [ ] Zapis do `companies` z dedupem po `(source, source_id)` i `normalized_domain`.
-- [ ] Prosty skrypt/endpoint `POST /discovery/run` (lub skill `/find-leads`) uruchamiający oba
-      konektory dla podanej lokalizacji/branży.
-- [ ] Eksport CSV do ręcznej weryfikacji jakości wyników przed przejściem dalej.
+- [x] Konektor OpenStreetMap Overpass API — darmowy, bez klucza, z fallbackiem na kilka mirrorów
+      (publiczna instancja `overpass-api.de` bywa niestabilna pod obciążeniem).
+- [x] Konektor Google Places API (Text Search) — gotowy, aktywuje się po dodaniu
+      `GOOGLE_PLACES_API_KEY` do `.env`; bez klucza źródło jest pomijane, nie wywala runu.
+- [x] Zapis do `companies` z dedupem po `(source, source_id)` i `normalized_domain`.
+- [x] `POST /discovery/run` + `GET /discovery/industries` (8 startowych branż).
+- [x] Eksport CSV (`GET /companies/export.csv`) do ręcznej weryfikacji jakości wyników.
+- [x] Odporność: awaria jednego źródła (np. padnięty Overpass) trafia do `skipped_sources`,
+      nie crashuje całego zapytania.
 
-**⛔ Zależność zewnętrzna:** potrzebny `GOOGLE_PLACES_API_KEY` (Google Cloud Console, darmowy
-kredyt miesięczny). Bez niego można zbudować i przetestować sam konektor OSM.
+**⛔ Zależność zewnętrzna (nadal otwarta):** `GOOGLE_PLACES_API_KEY` — dorzucić do `.env`, gdy
+będzie potrzebne drugie źródło danych (OSM samo w sobie już działa i daje realne leady).
 
-**Weryfikacja fazy:** wyszukanie "fryzjer, Kraków" zwraca sensowną listę firm, część bez pola
-`website` (czyli realni kandydaci), zero duplikatów przy powtórnym uruchomieniu.
+**Zweryfikowane:** "fryzjer, Kraków" przez żywe Overpass API → 527 wyników, część bez strony;
+"kwiaciarnia, Zakopane" zapisana do bazy, powtórne uruchomienie → 0 nowych rekordów (dedup działa).
 
 ---
 
