@@ -72,5 +72,11 @@ fallback na odgadnięty wzorzec), scoring z pełnym, czytelnym uzasadnieniem (`C
 nie zgadywałem kształtu zapytania bez możliwości przetestowania go na żywo (szczegóły i jak to
 dokończyć: `packages/enrichment/CLAUDE.md`).
 
-**Następny etap: Dashboard** (Faza 3 z `ROADMAP.md`) — UI do przeglądania/filtrowania/zatwierdzania
-leadów, zanim cokolwiek zacznie się wysyłać automatycznie.
+**Etap 3 (Dashboard): gotowy.** Rejestr leadów (lista + filtry branża/status strony/kraj/min. wynik),
+rozwijane wiersze z pełnym uzasadnieniem score'u, panel uruchamiający discovery i enrichment wprost
+z UI, eksport CSV. Design: patrz `apps/web/CLAUDE.md` ("rejestr inspekcyjny" -- papier+atrament+jeden
+akcent, Source Serif 4 / IBM Plex Sans / IBM Plex Mono). `tsc`/`lint` czyste, brak wizualnej
+weryfikacji zrzutem ekranu (brak narzędzi przeglądarki w tym środowisku).
+
+**Następny etap: Mailer Engine** (Faza 4 z `ROADMAP.md`) — to już wymaga Twojej decyzji o domenie/
+skrzynce pod cold mailing, patrz tabela "czego będę potrzebować" w `ROADMAP.md`.

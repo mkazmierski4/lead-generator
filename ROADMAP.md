@@ -68,19 +68,24 @@ domeną → `dead`; firma z działającą nowoczesną stroną → `ok`, score ni
 
 ---
 
-## Faza 3 — Dashboard ⬜
+## Faza 3 — Dashboard ✅ (poza kolejką kampanii, patrz Faza 4)
 
 Cel: wygodny, ładny UI do przeglądania/filtrowania/zatwierdzania leadów — zanim cokolwiek
 wyśle się automatycznie.
 
-- [ ] Lista leadów z filtrami: kraj, branża, `website_status`, min. score, status kontaktu.
-- [ ] Widok szczegółów firmy — dane kontaktowe, źródło, uzasadnienie score'u.
-- [ ] Ręczne zatwierdzanie/odrzucanie leadów do kolejnej kampanii (kolejka do wysyłki).
-- [ ] Podstawowy branding/design pass (patrz `artifact-design`/`frontend-design` jako inspiracja
-      stylistyczna, choć to nie jest Artifact — zwykła appka Next.js).
+- [x] Lista leadów z filtrami: kraj, branża, `website_status`, min. score (+ paginacja).
+- [x] Widok szczegółów firmy — dane kontaktowe, źródło, pełne uzasadnienie score'u (rozwijany wiersz).
+- [x] Uruchamianie discovery i enrichment wprost z UI (bez `curl`/Swaggera), eksport CSV.
+- [x] Świadomy design pass — koncepcja "rejestr inspekcyjny", patrz `apps/web/CLAUDE.md`.
+- [ ] Ręczne zatwierdzanie/odrzucanie leadów do kolejki kampanii — czeka na `packages/mailer`
+      (Faza 4), bo dopóki nie ma kampanii, nie ma do czego kolejkować.
 
-**Weryfikacja fazy:** da się od zera, z poziomu przeglądarki, przejrzeć wyniki Fazy 1+2 i wybrać
-20-50 leadów do pierwszej kampanii.
+**Zweryfikowane:** `tsc --noEmit` i `next lint` czyste, strona renderuje się i łączy z realnym API
+(dane z Zakopanego z Fazy 1/2). Bez zrzutu ekranu -- w tym środowisku CLI nie było dostępnego
+narzędzia przeglądarki do wizualnej kontroli; jeśli coś wygląda źle, zgłoś to do poprawki.
+
+Da się od zera, z poziomu przeglądarki, przejrzeć wyniki Fazy 1+2 i wybrać 20-50 leadów do pierwszej
+kampanii -- brakuje tylko przycisku "zakolejkuj do kampanii", bo kampanie jeszcze nie istnieją.
 
 ---
 
