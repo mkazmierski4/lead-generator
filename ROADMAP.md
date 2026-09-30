@@ -46,18 +46,25 @@ będzie potrzebne drugie źródło danych (OSM samo w sobie już działa i daje 
 
 ---
 
-## Faza 2 — Enrichment Engine ⬜
+## Faza 2 — Enrichment Engine ✅ (poza CEIDG)
 
 Cel: dla każdego leadu ustalić, czy strona istnieje/działa, znaleźć kontakt e-mail, policzyć score.
 
-- [ ] `website_checker` — status HTTP, SSL, heurystyki "przestarzała strona", WHOIS (wygaśnięcie domeny).
-- [ ] `email_finder` — scraping stopki/kontaktu własnej strony firmy, pattern-guessing (`info@`, `kontakt@`).
-- [ ] Konektor CEIDG/KRS (Polska) — `registered_at` jako twardy sygnał "młoda firma".
-- [ ] `scoring` — łączy sygnały w `Company.score`, z uzasadnieniem widocznym w dashboardzie.
-- [ ] Endpoint/skill `/enrich-leads` uruchamiający pipeline dla nowych, nieprzetworzonych leadów.
+- [x] `website_checker` — status HTTP, fallback https→http, wykrywanie zaparkowanych domen, heurystyki
+      "przestarzała strona" (brak HTTPS/viewport).
+- [x] `email_finder` — scraping treści strony (regex + filtr szumu), fallback na pattern-guessing
+      (`kontakt@domena`, zawsze oznaczony jako niezweryfikowany).
+- [x] `scoring` — łączy `website_status` + wiek firmy (gdy znany) + dostępność kontaktu + historię
+      kontaktu (`send_log`) w `Company.score`, z pełnym uzasadnieniem w `Company.score_explanation`.
+- [x] `POST /enrichment/run` uruchamiający pipeline dla nowych, nieprzetworzonych leadów.
+- [ ] **Konektor CEIDG (Polska)** — `registered_at` jako sygnał "młoda firma". Zablokowane: nie udało
+      się zweryfikować dokładnych parametrów API v2 (dokumentacja PDF nie renderowała się lokalnie).
+      Wymaga: darmowej rejestracji na `dane.biznes.gov.pl` (JWT mailem) + jednego przebiegu weryfikacji
+      na żywo, zanim powstanie kod -- patrz `packages/enrichment/CLAUDE.md`.
 
-**Weryfikacja fazy:** firma z martwą stroną dostaje `website_status=dead` i wysoki score; firma
-z działającą, nowoczesną stroną dostaje niski score (odsiew).
+**Zweryfikowane:** firma bez strony → `website_status=none`, score +30 (priorytet); firma z martwą
+domeną → `dead`; firma z działającą nowoczesną stroną → `ok`, score nisko (odsiew) -- wszystko na
+żywych stronach (Zakopane, kawiarnie/kwiaciarnie), nie na danych syntetycznych.
 
 ---
 
@@ -132,6 +139,7 @@ Cel: więcej krajów, więcej wolumenu, lepsza konwersja.
 | Kiedy | Czego potrzeba |
 |---|---|
 | Przed Fazą 1 (pełne możliwości) | Klucz `GOOGLE_PLACES_API_KEY` z Google Cloud Console |
+| Dokończenie Fazy 2 (sygnał "młoda firma") | Darmowa rejestracja na `dane.biznes.gov.pl` → JWT do `CEIDG_API_KEY` |
 | Przed Fazą 4 | Nazwa domeny pod cold mailing + wybór dostawcy skrzynki (Google Workspace / Zoho / inny) |
 | Przy skalowaniu za granicę (Faza 6) | Lista docelowych krajów w kolejności priorytetu |
 | Repozytorium na GitHub (opcjonalnie, poza tym roadmapem) | Puste repo utworzone na Twoim koncie + skonfigurowane lokalnie dane uwierzytelniające do gita (nie potrzebuję Twojego hasła/tokenu — wystarczy, że `git push` będzie działał z Twojego konta) |

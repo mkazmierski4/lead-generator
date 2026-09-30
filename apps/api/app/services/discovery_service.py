@@ -68,7 +68,7 @@ def run_discovery(db: Session, country: str, city: str, industry: str, sources: 
                 phone=raw.phone,
                 website_url=raw.website_url,
                 normalized_domain=normalize_domain(raw.website_url),
-                website_status=WebsiteStatus.UNKNOWN,
+                website_status=WebsiteStatus.UNKNOWN if raw.website_url else WebsiteStatus.NONE,
                 source=LeadSource(raw.source),
                 source_id=raw.source_id,
             )

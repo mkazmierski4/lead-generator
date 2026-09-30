@@ -43,7 +43,23 @@ omijać ich przy budowie `packages/mailer`.
   (Faza 4, przy suppression liście), przenieść go do `packages/shared` — na razie zostaje lokalnie
   (patrz zasada projektu o unikaniu przedwczesnych abstrakcji).
 
+## Enrichment (Faza 2) — zbudowane
+
+- `POST /enrichment/run?limit=50` — bierze firmy z `enriched_at IS NULL`, dla każdej: sprawdza stronę
+  (`website_checker`), szuka/odgaduje e-mail gdy brak kontaktu (`email_finder`), liczy `score` +
+  `score_explanation`. Zwraca `{processed}`.
+- `app/services/enrichment_service.py::_enrich_company` **sam egzekwuje** `website_status=NONE` gdy
+  brak `website_url` -- nie polega na tym, że `discovery_service` już to ustawił. Powód: dane zapisane
+  przed wprowadzeniem tej reguły (albo przyszły import z innego źródła) inaczej zostałyby błędnie
+  ocenione jako "jeszcze nie sprawdzone".
+- Kolejność w `email_finder`: najpierw `find_in_html` (scraping), dopiero gdy nic nie znajdzie —
+  `guess_pattern` jako fallback. Odwrotna kolejność (albo pomijanie fallbacku) była błędem złapanym
+  przy testowaniu na żywych danych -- zawsze weryfikuj to zachowanie po zmianach w tym module.
+- Scoring jest celowo prostą, czytelną formułą punktową (nie ML) -- patrz `packages/enrichment/CLAUDE.md`
+  po pełne reguły. Firma już obecna w `send_log` dostaje mocno ujemny score zamiast być usuwana z bazy
+  (zostaje widoczna/audytowalna, po prostu spada na dół listy).
+
 ## Co jeszcze nie istnieje (kolejne etapy)
 
-Rejestry firm (CEIDG/KRS), `website_checker`, `email_finder`, scoring — to `packages/enrichment`
-(Faza 2). Endpointy do kampanii/wysyłki — `packages/mailer` (Faza 4). Pełny UI dashboardu — Faza 3.
+Konektor CEIDG (`registered_at`) — zablokowany na weryfikacji API, patrz `packages/enrichment/CLAUDE.md`.
+Endpointy do kampanii/wysyłki — `packages/mailer` (Faza 4). Pełny UI dashboardu — Faza 3.

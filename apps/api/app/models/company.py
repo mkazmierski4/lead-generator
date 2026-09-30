@@ -1,9 +1,9 @@
 import enum
 import uuid
-from datetime import date
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, Enum, Float, Index, String, UniqueConstraint
+from sqlalchemy import Date, DateTime, Enum, Float, Index, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -60,5 +60,9 @@ class Company(TimestampMixin, Base):
     source_id: Mapped[str] = mapped_column(String(255), nullable=False)  # id w systemie źródłowym, do dedupu
 
     score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Czytelne dla człowieka uzasadnienie score'u (lista powodów) -- wymóg z packages/enrichment/CLAUDE.md:
+    # scoring nie może być czarną skrzynką, dashboard musi umieć pokazać "dlaczego taki wynik".
+    score_explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    enriched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     contacts: Mapped[list["Contact"]] = relationship(back_populates="company", cascade="all, delete-orphan")

@@ -30,5 +30,7 @@ class CompanyOut(BaseModel):
     registered_at: date | None
     source: LeadSource
     score: float | None
+    score_explanation: str | None
+    enriched_at: datetime | None
     created_at: datetime
     contacts: list[ContactOut] = []

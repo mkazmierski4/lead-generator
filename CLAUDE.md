@@ -64,5 +64,13 @@ Krakowie, kwiaciarnie w Zakopanem — część bez strony, zero duplikatów przy
 awaria jednego źródła nie wywala całego runu). Szczegóły: `packages/discovery/CLAUDE.md`,
 `apps/api/CLAUDE.md`.
 
-**Następny etap: Enrichment Engine** (patrz `packages/enrichment/CLAUDE.md`) — `website_checker`,
-`email_finder`, konektor CEIDG/KRS, scoring.
+**Etap 2 (Enrichment Engine): gotowy, poza jednym punktem.** `website_checker` (status HTTP/SSL,
+heurystyka przestarzałej strony, wykrywanie zaparkowanych domen), `email_finder` (scraping stopki +
+fallback na odgadnięty wzorzec), scoring z pełnym, czytelnym uzasadnieniem (`Company.score_explanation`).
+`POST /enrichment/run`. Zweryfikowane na żywych stronach (zob. `packages/enrichment/CLAUDE.md`).
+**Nie zbudowane:** konektor CEIDG (`registered_at`) — zablokowany na weryfikacji parametrów API,
+nie zgadywałem kształtu zapytania bez możliwości przetestowania go na żywo (szczegóły i jak to
+dokończyć: `packages/enrichment/CLAUDE.md`).
+
+**Następny etap: Dashboard** (Faza 3 z `ROADMAP.md`) — UI do przeglądania/filtrowania/zatwierdzania
+leadów, zanim cokolwiek zacznie się wysyłać automatycznie.
