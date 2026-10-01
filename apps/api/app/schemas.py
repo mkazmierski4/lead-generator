@@ -118,6 +118,17 @@ class QueueItemOut(BaseModel):
     body: str | None
 
 
+class CompanySendOut(BaseModel):
+    id: uuid.UUID
+    campaign_id: uuid.UUID
+    campaign_name: str
+    status: SendStatus
+    email: str | None
+    sent_at: datetime | None
+    created_at: datetime
+    error: str | None
+
+
 class QueueIn(BaseModel):
     company_ids: list[uuid.UUID]
 
@@ -139,6 +150,7 @@ class RenderedMail(BaseModel):
     email: str | None
     subject: str
     body: str
+    context: dict[str, str] = {}
 
 
 class SendIn(BaseModel):
@@ -168,6 +180,9 @@ class MailerStatus(BaseModel):
     remaining_today: int
     daily_send_limit: int
     warmup_start: date | None
+    send_delay_min_s: float
+    send_delay_max_s: float
+    smtp_is_test: bool
     variables: dict[str, str]
 
 

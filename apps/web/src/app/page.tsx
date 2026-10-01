@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Topbar } from "@/components/Topbar";
 import { RunLine } from "@/components/RunLine";
-import { api, type Company, type CompanyStats, type Run } from "@/lib/api";
+import { api, type Company, type CompanyStats, type MailerStatus, type Run } from "@/lib/api";
 import { LEADS_CHANGED, notifyLeadsChanged } from "@/lib/events";
 import { useCountUp, useIndustries } from "@/lib/hooks";
 import { STATUS_LABELS, initial, plural, toneOf } from "@/lib/labels";
@@ -24,6 +24,7 @@ export default function Pulpit() {
   const [error, setError] = useState<string | null>(null);
   const [enriching, setEnriching] = useState(false);
   const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
+  const [mailer, setMailer] = useState<MailerStatus | null>(null);
 
   const load = useCallback(() => {
     Promise.all([api.stats(), api.companies({ limit: 4, min_score: 1 }), api.runs(undefined, 5)])
@@ -34,6 +35,7 @@ export default function Pulpit() {
         setError(null);
       })
       .catch((e: Error) => setError(e.message));
+    api.mailerStatus().then(setMailer).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -108,8 +110,11 @@ export default function Pulpit() {
             <div>
               <Metric label="Wzbogacone" value={<b className="num" style={{ fontWeight: 600 }}>{enriched}</b>} />
               <Metric label="Czeka na ocenę" value={<b className="num" style={{ fontWeight: 600 }}>{awaiting}</b>} />
-              <Metric label="Wysłane dziś" value={<span className="faint">po fazie 4</span>} />
-              <Metric label="Odpowiedzi" value={<span className="faint">po fazie 4</span>} last />
+              <Metric
+                label="Wysłane dziś"
+                value={mailer ? <Link href="/kampanie"><b className="num" style={{ fontWeight: 600 }}>{mailer.sent_today}</b><span className="muted"> / {mailer.cap_today}</span></Link> : <span className="faint">—</span>}
+              />
+              <Metric label="Odpowiedzi" value={<span className="faint">po fazie 5</span>} last />
             </div>
             <div>
               {stats && stats.total === 0 ? (

@@ -12,12 +12,16 @@ export function LeadRow({
   open,
   onToggle,
   onExclude,
+  selected,
+  onSelect,
 }: {
   company: Company;
   industryLabel: string;
   open: boolean;
   onToggle: () => void;
   onExclude: (id: string) => Promise<void>;
+  selected: boolean;
+  onSelect: () => void;
 }) {
   const tone = toneOf(company);
   const reasons = parseReasons(company.score_explanation);
@@ -48,8 +52,20 @@ export function LeadRow({
   const detailId = `lead-${company.id}`;
 
   return (
-    <div className={open ? "lrow open" : "lrow"}>
-      <button type="button" className="lrow-head" onClick={onToggle} aria-expanded={open} aria-controls={detailId}>
+    <div className={["lrow", open && "open", selected && "sel"].filter(Boolean).join(" ")}>
+      <div style={{ display: "flex", alignItems: "center" }}>
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={selected}
+        aria-label={`Zaznacz ${company.name}`}
+        className={selected ? "cb on" : "cb"}
+        style={{ marginLeft: 22 }}
+        onClick={onSelect}
+      >
+        <svg width="12" height="12" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9.5l3.2 3.2L14 5.5" /></svg>
+      </button>
+      <button type="button" className="lrow-head" style={{ paddingLeft: 14, flex: 1, minWidth: 0, width: "auto" }} onClick={onToggle} aria-expanded={open} aria-controls={detailId}>
         <span className={`mono mono-${tone}`}>{initial(company.name)}</span>
         <span style={{ minWidth: 0 }}>
           <span className="lrow-name">{company.name}</span>
@@ -65,6 +81,7 @@ export function LeadRow({
         </span>
         <IconChevron size={16} className={open ? "chev open" : "chev"} />
       </button>
+      </div>
 
       {open && (
         <div className="lrow-detail" id={detailId}>

@@ -16,10 +16,10 @@ VARIABLES: dict[str, str] = {
 # Frazy dopasowane do konstrukcji "zauważyłem, że {{problem}}." -- zmieniając je, sprawdź podgląd.
 _PROBLEMS = {
     "none": "Państwa firma nie ma jeszcze strony internetowej",
-    "dead": "Państwa strona internetowa obecnie się nie otwiera",
-    "outdated": "Państwa strona nie wyświetla się dobrze na telefonach",
-    "ok": "Państwa strona działa, ale można by ją odświeżyć",
-    "unknown": "nie udało mi się otworzyć Państwa strony internetowej",
+    "dead": "strona obecnie się nie otwiera",
+    "outdated": "strona nie wyświetla się dobrze na telefonach",
+    "ok": "strona działa, ale wygląda na dawno nieodświeżaną",
+    "unknown": "nie udało mi się otworzyć strony",
 }
 
 
@@ -60,15 +60,22 @@ def render(text: str, context: dict[str, str]) -> str:
 @dataclass(frozen=True)
 class Sender:
     name: str  # "Jan Kowalski"
-    email: str  # adres From, np. jan@outreach.mojadomena.pl
-    identity: str  # pełna identyfikacja: firma, adres, NIP -- wymóg prawny przy kontakcie B2B
+    email: str  # adres From, np. jan@mojadomena.pl
+    # Linia pod imieniem w podpisie: czym się zajmujesz i jak się skontaktować. Przy działalności
+    # gospodarczej także nazwa firmy, adres i NIP.
+    identity: str
 
     def missing(self) -> list[str]:
-        return [label for label, value in (("imię i nazwisko", self.name), ("adres e-mail", self.email), ("dane firmy", self.identity)) if not value.strip()]
+        return [
+            label
+            for label, value in (("imię i nazwisko", self.name), ("adres e-mail", self.email), ("opis w podpisie", self.identity))
+            if not value.strip()
+        ]
 
 
 def footer(sender: Sender) -> str:
-    """Stopka dołączana przez silnik do KAŻDEGO maila. Szablon nie może jej usunąć ani pominąć."""
+    """Podpis dołączany przez silnik do KAŻDEGO maila. Szablon nie może go usunąć ani pominąć,
+    dlatego szablony kończą się samym "Pozdrawiam" -- imię i nazwisko dokłada podpis."""
     return (
         "\n\n--\n"
         f"{sender.name}\n"

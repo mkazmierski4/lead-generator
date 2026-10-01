@@ -28,11 +28,22 @@ kolejka i zabezpieczenia: `apps/api/app/services/mailer_service.py`, endpointy: 
 6. Kampanii, z której wyszedł choć jeden mail, nie da się usunąć — jej `send_log` chroni przed ponownym
    kontaktem z tymi samymi firmami.
 
+## Gotowe szablony (`starters.py`)
+
+Trzy szablony pierwszej wiadomości, z zasadami pisania w docstringu. Najważniejsza: **zmienne
+wstawiają się w mianowniku**, więc stoją tylko w temacie, nawiasie albo dopowiedzeniu ("trafiłem na
+Państwa firmę ({{firma}})"), nigdy "w {{miasto}}". Frazy `{{problem}}` są pisane pod "zauważyłem, że …"
+— zmieniając je, wyrenderuj szablony na prawdziwych firmach (`POST /campaigns/render`) i przeczytaj.
+Pierwszy mail o nic nie prosi poza odpowiedzią na pytanie "czy mogę przesłać przykłady?".
+
 ## Testowanie
 
-Docker Compose ma Mailpit (SMTP `mailpit:1025`, podgląd http://localhost:8025) — wszystko, co tam
-wyślesz, zostaje lokalnie. Po testach z prawdziwymi firmami z rejestru **usuń testowe wpisy z `send_log`**,
-inaczej te firmy zostaną na zawsze oznaczone jako "już kontaktowane".
+Docker Compose ma Mailpit (SMTP `mailpit:1025`, podgląd http://localhost:8025).
+- **Wysyłka partii na Mailpit jest zablokowana** (`is_test_mailbox()`): zapisałaby prawdziwe firmy jako
+  "już kontaktowane", choć nic do nich nie wyszło. Do testów treści: `POST /campaigns/{id}/test`
+  ("Wyślij test do siebie") — nie trafia do `send_log` ani do limitu.
+- Jeśli testujesz silnik ręcznie z inną skrzynką na prawdziwych firmach z rejestru, **usuń potem
+  testowe wpisy z `send_log`**.
 
 ## Jeszcze nie ma (faza 5)
 

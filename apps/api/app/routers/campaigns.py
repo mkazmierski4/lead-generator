@@ -25,6 +25,7 @@ from app.schemas import (
 )
 from app.services import mailer_service as mailer
 from discovery.industries import INDUSTRIES
+from mailer.starters import STARTERS
 from mailer.templates import VARIABLES, TemplateError
 
 router = APIRouter(prefix="/campaigns", tags=["campaigns"])
@@ -84,8 +85,16 @@ def mailer_status(db: Session = Depends(get_db)) -> MailerStatus:
         remaining_today=max(0, cap - sent),
         daily_send_limit=mailer.settings.daily_send_limit,
         warmup_start=mailer.settings.warmup_start,
+        send_delay_min_s=mailer.settings.send_delay_min_s,
+        send_delay_max_s=mailer.settings.send_delay_max_s,
+        smtp_is_test=mailer.is_test_mailbox(),
         variables=VARIABLES,
     )
+
+
+@router.get("/starters")
+def starter_templates() -> list[dict[str, str]]:
+    return STARTERS
 
 
 @router.post("/render", response_model=RenderedMail)
@@ -111,7 +120,14 @@ def render_template(payload: RenderIn, db: Session = Depends(get_db)) -> Rendere
     except TemplateError as exc:
         raise _bad_request(exc) from exc
     contact = mailer.pick_contact(company, allow_guessed=True)
-    return RenderedMail(company_id=company.id, company_name=company.name, email=contact.email if contact else None, subject=subject, body=body)
+    return RenderedMail(
+        company_id=company.id,
+        company_name=company.name,
+        email=contact.email if contact else None,
+        subject=subject,
+        body=body,
+        context=mailer.context_for(company, _label(company.industry), mailer.current_sender()),
+    )
 
 
 @router.get("", response_model=list[CampaignOut])

@@ -50,6 +50,10 @@ def smtp_config() -> smtp.SmtpConfig:
     return smtp.SmtpConfig(settings.smtp_host, settings.smtp_port, settings.smtp_user, settings.smtp_password)
 
 
+def is_test_mailbox() -> bool:
+    return settings.smtp_host.strip().lower() == "mailpit"
+
+
 def _today_local() -> date:
     return datetime.now(LOCAL_TZ).date()
 
@@ -180,9 +184,17 @@ def context_for(company: Company, industry_label: str, sender: Sender) -> dict[s
         "miasto": company.city or "",
         "branza": industry_label.lower(),
         "problem": problem_sentence(company.website_status.value),
-        "strona": company.website_url or "",
+        "strona": _display_domain(company.website_url),
         "nadawca": sender.name or "[Twoje imię i nazwisko]",
     }
+
+
+def _display_domain(url: str | None) -> str:
+    # "https://www.strh.pl/" -> "strh.pl": tak wygląda naturalnie w zdaniu i w temacie.
+    if not url:
+        return ""
+    host = url.split("//", 1)[-1].split("/", 1)[0].lower()
+    return host[4:] if host.startswith("www.") else host
 
 
 def render_mail(campaign: Campaign, company: Company, industry_label: str, sender: Sender) -> tuple[str, str]:
@@ -197,7 +209,7 @@ def _footer_sender(sender: Sender) -> Sender:
     return Sender(
         name=sender.name or "[Twoje imię i nazwisko]",
         email=sender.email or "[adres nadawcy]",
-        identity=sender.identity or "[Nazwa firmy, adres, NIP]",
+        identity=sender.identity or "[opis w podpisie, np. strony internetowe dla lokalnych firm]",
     )
 
 
@@ -236,6 +248,10 @@ def send_campaign(db: Session, campaign: Campaign, industry_labels: dict[str, st
         raise MailerError(f"Uzupełnij w .env dane nadawcy: {', '.join(missing)}")
     if not smtp_config().configured:
         raise MailerError("Brak skonfigurowanej skrzynki (SMTP_HOST w .env)")
+    if is_test_mailbox():
+        # Partia na Mailpit zapisałaby prawdziwe firmy jako "już kontaktowane", choć nic do nich nie wyszło.
+        raise MailerError("To skrzynka testowa (Mailpit). Partii nie wysyłamy, bo firmy zostałyby oznaczone jako "
+                          "już kontaktowane. Do testów użyj „Wyślij test do siebie”.")
     if queued == 0:
         raise MailerError("Kolejka tej kampanii jest pusta")
     if remaining == 0:

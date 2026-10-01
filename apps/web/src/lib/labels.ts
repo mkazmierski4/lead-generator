@@ -1,4 +1,17 @@
-import type { Company, LeadSource, WebsiteStatus } from "./api";
+import type { CampaignStatus, Company, LeadSource, WebsiteStatus } from "./api";
+
+export const CAMPAIGN_STATUS: Record<CampaignStatus, { label: string; tone: "accent" | "pos" | "mute" }> = {
+  draft: { label: "szkic", tone: "mute" },
+  active: { label: "wysyła teraz", tone: "accent" },
+  paused: { label: "wstrzymana", tone: "mute" },
+  completed: { label: "kolejka wysłana", tone: "pos" },
+};
+
+export const VAR_RE = /\{\{\s*([a-z_]+)\s*\}\}/g;
+
+export function delivered(c: { counts: Record<string, number> }): number {
+  return ["sent", "bounced", "opened", "replied", "unsubscribed"].reduce((sum, k) => sum + (c.counts[k] ?? 0), 0);
+}
 
 export const MAX_SCORE = 65;
 

@@ -5,27 +5,12 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, type SettingsStatus } from "@/lib/api";
 import { LEADS_CHANGED } from "@/lib/events";
-import {
-  IconBan,
-  IconCheckSquare,
-  IconFile,
-  IconGrid,
-  IconList,
-  IconMail,
-  IconMessage,
-  IconPulse,
-  IconSearch,
-  IconSend,
-  IconSliders,
-} from "./icons";
+import { IconBan, IconGrid, IconList, IconMail, IconMessage, IconPulse, IconSearch, IconSliders } from "./icons";
 
 const SOON = [
-  { label: "Szablony", Icon: IconFile, group: "send" },
-  { label: "Kolejka wysyłki", Icon: IconCheckSquare, group: "send" },
-  { label: "Wysyłki", Icon: IconSend, group: "send" },
-  { label: "Odpowiedzi", Icon: IconMessage, group: "monitor" },
-  { label: "Lista wykluczeń", Icon: IconBan, group: "monitor" },
-  { label: "Dostarczalność", Icon: IconPulse, group: "monitor" },
+  { label: "Odpowiedzi", Icon: IconMessage },
+  { label: "Lista wykluczeń", Icon: IconBan },
+  { label: "Dostarczalność", Icon: IconPulse },
 ];
 
 export function Sidebar() {
@@ -67,15 +52,12 @@ export function Sidebar() {
 
         <div className="nav-label">Wysyłka</div>
         <Link href="/kampanie" className={cls("/kampanie")} aria-current={aria("/kampanie")}>
-          <IconMail />Kampanie<span className="tag">faza 4</span>
+          <IconMail />Kampanie
         </Link>
-        {SOON.filter((s) => s.group === "send").map(({ label, Icon }) => (
-          <div key={label} className="ni off"><Icon />{label}<span className="tag">wkrótce</span></div>
-        ))}
 
         <div className="nav-label">Monitoring</div>
-        {SOON.filter((s) => s.group === "monitor").map(({ label, Icon }) => (
-          <div key={label} className="ni off"><Icon />{label}<span className="tag">wkrótce</span></div>
+        {SOON.map(({ label, Icon }) => (
+          <div key={label} className="ni off"><Icon />{label}<span className="tag">faza 5</span></div>
         ))}
       </nav>
 

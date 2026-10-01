@@ -92,24 +92,27 @@ kampanii -- brakuje tylko przycisku "zakolejkuj do kampanii", bo kampanie jeszcz
 
 ---
 
-## Faza 4 — Mailer Engine ⬜
+## Faza 4 — Mailer Engine ✅ w kodzie, ⛔ czeka na domenę
 
 Cel: bezpieczna wysyłka — najbardziej krytyczny etap pod kątem ryzyka (spam/ban).
 
-- [ ] **Setup infrastruktury (czynność jednorazowa, częściowo ręczna):** domena pod cold mailing,
-      skrzynka (Google Workspace/Zoho), konfiguracja SPF/DKIM/DMARC.
-- [ ] Harmonogram warmupu (rosnący `DAILY_SEND_LIMIT`: ~5-10/dzień → 20-50/dzień w 3-4 tygodnie).
-- [ ] Rate limiter egzekwowany w kodzie (nie tylko w UI) — patrz `packages/mailer/CLAUDE.md`.
-- [ ] System szablonów z personalizacją (nazwa firmy, miasto, konkretny problem ze stroną) +
-      wymuszony link wypisania i identyfikacja nadawcy.
-- [ ] Sprawdzenie `suppression_list` + `send_log` przed każdą wysyłką (twarda reguła projektu).
-- [ ] Wysyłka SMTP z opóźnieniami między mailami, domyślny tryb `dry-run`.
+- [x] Kampanie: własny szablon z zmiennymi wstawianymi w miejscu kursora, 3 gotowe szablony
+      (napisane pod brak odmiany zmiennych), podgląd na prawdziwych firmach.
+- [x] Kolejka tylko z potwierdzonymi adresami (odgadnięte na życzenie per kampania), dodawanie z listy
+      leadów (zaznaczanie) i z karty firmy, z wyjaśnieniem pominięć.
+- [x] Przed każdym mailem: wykluczenia, suppression list, historia kontaktu z dowolnej kampanii.
+- [x] Dzienny limit z harmonogramem rozgrzewania (10/15/25/35, potem `DAILY_SEND_LIMIT`), egzekwowany
+      w silniku; wysyłka w tle z losowym odstępem, zatrzymanie, stop po 3 błędach SMTP.
+- [x] Podpis i informacja o wypisaniu doklejane zawsze; `List-Unsubscribe`; domyślnie `dry_run`;
+      okno potwierdzenia partii w UI.
+- [x] Mailpit jako skrzynka testowa ("Wyślij test do siebie"); wysyłka partii na Mailpit zablokowana,
+      żeby nie oznaczać firm jako kontaktowanych.
+- [ ] **Domena + skrzynka + SPF/DKIM/DMARC** — po stronie użytkownika (stan na 2026-10-01: brak domeny).
 
-**⛔ Zależność zewnętrzna:** decyzja o domenie/skrzynce (nazwa domeny, dostawca poczty) — do
-ustalenia z użytkownikiem przed startem tej fazy.
-
-**Weryfikacja fazy:** testowa wysyłka na własny adres trafia do Odebrane (nie Spam), nagłówki
-SPF/DKIM/DMARC = pass, próba drugiej wysyłki do tego samego kontaktu jest zablokowana.
+**Weryfikacja kodu:** cały przepływ przetestowany przez API i na Mailpit (kolejka 3 z 23 firm, test
+dociera z [TEST], partia na Mailpit blokowana, historia firmy, usuwanie kampanii bez wysłanych).
+**Weryfikacja dostarczalności (po domenie):** test na własny adres w Gmailu trafia do Odebrane,
+nagłówki SPF/DKIM/DMARC = pass.
 
 ---
 

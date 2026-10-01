@@ -9,10 +9,12 @@ from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
+from app.models.campaign import Campaign
 from app.models.company import Company, WebsiteStatus
 from app.models.contact import Contact, ContactSource
+from app.models.send_log import SendLog
 from app.models.suppression import SuppressionEntry, SuppressionReason
-from app.schemas import CompanyOut, CompanyStats, ContactIn
+from app.schemas import CompanyOut, CompanySendOut, CompanyStats, ContactIn
 from app.services.enrichment_service import rescore
 
 router = APIRouter(prefix="/companies", tags=["companies"])
@@ -139,6 +141,30 @@ def export_companies_csv(
 @router.get("/{company_id}", response_model=CompanyOut)
 def get_company(company_id: uuid.UUID, db: Session = Depends(get_db)) -> Company:
     return _get_or_404(db, company_id)
+
+
+@router.get("/{company_id}/sends", response_model=list[CompanySendOut])
+def company_sends(company_id: uuid.UUID, db: Session = Depends(get_db)) -> list[CompanySendOut]:
+    _get_or_404(db, company_id)
+    rows = db.execute(
+        select(SendLog, Campaign.name)
+        .join(Campaign, Campaign.id == SendLog.campaign_id)
+        .where(SendLog.company_id == company_id)
+        .order_by(SendLog.created_at.desc())
+    ).all()
+    return [
+        CompanySendOut(
+            id=log.id,
+            campaign_id=log.campaign_id,
+            campaign_name=name,
+            status=log.status,
+            email=log.email,
+            sent_at=log.sent_at,
+            created_at=log.created_at,
+            error=log.error,
+        )
+        for log, name in rows
+    ]
 
 
 @router.post("/{company_id}/exclude", response_model=CompanyOut)

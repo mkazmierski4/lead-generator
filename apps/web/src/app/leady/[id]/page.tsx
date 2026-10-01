@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Topbar } from "@/components/Topbar";
 import { IconChevron, IconExternal, IconPhone } from "@/components/icons";
-import { api, type Company } from "@/lib/api";
+import { api, type Campaign, type Company, type CompanySend } from "@/lib/api";
 import { notifyLeadsChanged } from "@/lib/events";
 import { useIndustries } from "@/lib/hooks";
 import {
@@ -22,14 +22,27 @@ import {
 
 const CIRC = 2 * Math.PI * 38;
 
+const SEND_LABELS: Record<string, string> = {
+  queued: "W kolejce",
+  sent: "Wysłano",
+  bounced: "Odbite",
+  opened: "Otwarte",
+  replied: "Odpowiedź",
+  unsubscribed: "Wypisał się",
+  failed: "Błąd wysyłki",
+  skipped: "Pominięte",
+};
+
 export default function CompanyPage() {
   const { id } = useParams<{ id: string }>();
   const industries = useIndustries();
   const [company, setCompany] = useState<Company | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sends, setSends] = useState<CompanySend[]>([]);
 
   useEffect(() => {
     api.company(id).then(setCompany).catch((e: Error) => setError(e.message));
+    api.companySends(id).then(setSends).catch(() => {});
   }, [id]);
 
   const crumb = (
@@ -190,6 +203,18 @@ export default function CompanyPage() {
 
             <section className="panel rise d3" style={{ padding: "18px 22px 4px" }}>
               <h2 className="h2" style={{ marginBottom: 16 }}>Historia</h2>
+              {sends.map((s) => (
+                <div className="tl" key={s.id}>
+                  <span className="tl-dot" style={s.status === "queued" ? { borderStyle: "dashed" } : { background: "var(--ink)", borderColor: "var(--ink)" }} />
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>
+                    {SEND_LABELS[s.status] ?? s.status}: <Link href={`/kampanie/${s.campaign_id}`} style={{ textDecoration: "underline", textDecorationColor: "var(--line-strong)" }}>{s.campaign_name}</Link>
+                  </div>
+                  <div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>
+                    {s.sent_at ? formatDateTime(s.sent_at) : formatDateTime(s.created_at)}
+                    {s.error ? `, ${s.error}` : ""}
+                  </div>
+                </div>
+              ))}
               {company.excluded_at && (
                 <div className="tl"><span className="tl-dot" style={{ background: "var(--ink)", borderColor: "var(--ink)" }} /><div style={{ fontSize: 14, fontWeight: 500 }}>Wykluczona</div><div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>{formatDateTime(company.excluded_at)}</div></div>
               )}
@@ -197,7 +222,9 @@ export default function CompanyPage() {
                 <div className="tl"><span className="tl-dot" style={{ background: "var(--accent)", borderColor: "var(--accent)" }} /><div style={{ fontSize: 14, fontWeight: 500 }}>Wzbogacono{company.score != null ? `, wynik ${Math.round(company.score)}` : ""}</div><div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>{formatDateTime(company.enriched_at)}</div></div>
               )}
               <div className="tl"><span className="tl-dot" /><div style={{ fontSize: 14, fontWeight: 500 }}>Dodano z: {SOURCE_LABELS[company.source]}</div><div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>{formatDateTime(company.created_at)}</div></div>
-              <div className="tl"><span className="tl-dot" style={{ borderStyle: "dashed" }} /><div className="faint" style={{ fontSize: 13.5 }}>Wysyłki pojawią się tu po fazie 4</div></div>
+              {sends.length === 0 && (
+                <div className="tl"><span className="tl-dot" style={{ borderStyle: "dashed" }} /><div className="faint" style={{ fontSize: 13.5 }}>Jeszcze nie pisaliśmy do tej firmy</div></div>
+              )}
             </section>
           </div>
         </div>
@@ -234,13 +261,81 @@ function Actions({ company, onChange }: { company: Company; onChange: (c: Compan
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, marginLeft: 12, minWidth: 190 }}>
-      <button type="button" className="btn btn-primary" disabled title="Dostępne po zbudowaniu kampanii (faza 4)">Dodaj do kampanii</button>
+      {!company.excluded_at && <AddToCampaign company={company} />}
       {!company.excluded_at && (
         <button type="button" className="btn btn-quiet" onClick={exclude} disabled={busy} style={confirming ? { color: "var(--accent)" } : undefined}>
           {busy ? "Wykluczam…" : confirming ? "Na pewno? Kliknij ponownie" : "Wyklucz na stałe"}
         </button>
       )}
       {error && <span role="alert" style={{ fontSize: 12.5, color: "#8a3a12" }}>{error}</span>}
+    </div>
+  );
+}
+
+function AddToCampaign({ company }: { company: Company }) {
+  const [open, setOpen] = useState(false);
+  const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [result, setResult] = useState<{ ok: boolean; text: string; campaignId: string } | null>(null);
+
+  useEffect(() => {
+    if (!open || campaigns) return;
+    api.campaigns().then(setCampaigns).catch(() => setCampaigns([]));
+  }, [open, campaigns]);
+
+  async function add(c: Campaign) {
+    setBusyId(c.id);
+    try {
+      const res = await api.addToQueue(c.id, [company.id]);
+      setResult(
+        res.queued > 0
+          ? { ok: true, text: `Dodano do kampanii „${c.name}”.`, campaignId: c.id }
+          : { ok: false, text: res.skipped[0]?.reason ?? "Nie udało się dodać.", campaignId: c.id }
+      );
+    } catch (e) {
+      setResult({ ok: false, text: (e as Error).message, campaignId: c.id });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button type="button" className="btn btn-primary" style={{ width: "100%" }} aria-expanded={open} onClick={() => { setOpen(!open); setResult(null); }}>
+        Dodaj do kampanii
+      </button>
+      {open && (
+        <div className="popover">
+          {campaigns === null ? (
+            <p className="muted" style={{ margin: 0, fontSize: 13.5 }}>Wczytuję kampanie…</p>
+          ) : campaigns.length === 0 ? (
+            <>
+              <p className="muted" style={{ margin: "0 0 12px", fontSize: 13.5 }}>Nie masz jeszcze żadnej kampanii.</p>
+              <Link href="/kampanie/nowa" className="btn btn-ghost btn-sm">Utwórz kampanię</Link>
+            </>
+          ) : (
+            <>
+              <div className="muted" style={{ fontSize: 12.5, fontWeight: 500, marginBottom: 8 }}>Wybierz kampanię</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {campaigns.map((c) => (
+                  <button key={c.id} type="button" className="btn btn-quiet" style={{ justifyContent: "space-between", width: "100%" }} onClick={() => add(c)} disabled={busyId !== null}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", color: "var(--ink)" }}>{c.name}</span>
+                    <span className="faint" style={{ fontSize: 12 }}>{busyId === c.id ? "dodaję…" : `${c.counts.queued} w kolejce`}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {result && (
+            <div className={result.ok ? "warn warn-pos" : "warn warn-accent"} role="status">
+              <span>
+                {result.text}{" "}
+                {result.ok && <Link href={`/kampanie/${result.campaignId}`} style={{ textDecoration: "underline" }}>Zobacz kolejkę</Link>}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

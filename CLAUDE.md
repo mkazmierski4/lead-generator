@@ -81,5 +81,13 @@ Szczegóły: `apps/web/CLAUDE.md`, `apps/api/CLAUDE.md`. Nowe ekrany: najpierw m
 Zweryfikowane buildem, `tsc`, `lint` i realnymi wywołaniami API; wizualnie tylko przez makietę
 (w tym środowisku nie ma przeglądarki do zrzutów ekranu).
 
-**Następny etap: Mailer Engine** (Faza 4 z `ROADMAP.md`) — to już wymaga Twojej decyzji o domenie/
-skrzynce pod cold mailing, patrz tabela "czego będę potrzebować" w `ROADMAP.md`.
+**Etap 4 (Mailer Engine): gotowy w kodzie, czeka na domenę użytkownika.** Kampanie, kolejka, gotowe
+szablony, wysyłka w tle z limitem i rozgrzewaniem, wszystkie zabezpieczenia w silniku, UI wg makiety
+(rząd "Faza 4" na canvasie). Nadawca: Michał Kaźmierski (bez działalności gospodarczej — podpis to imię
+i nazwisko + opis). Szczegóły: `packages/mailer/CLAUDE.md`, `apps/web/CLAUDE.md`.
+
+**Zasada 2 w praktyce:** podpis i informację o wypisaniu dokleja silnik do każdego maila — szablon ich
+nie zawiera i nie może usunąć (mocniej niż wymóg placeholdera z pierwotnego planu).
+
+**Następny etap: Faza 5** — wykrywanie odpowiedzi i "wypisz" (IMAP), odbicia, monitoring reputacji.
+Ma sens dopiero po podłączeniu prawdziwej skrzynki.

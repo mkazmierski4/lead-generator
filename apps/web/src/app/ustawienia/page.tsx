@@ -2,22 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { Topbar } from "@/components/Topbar";
-import { api, type SettingsStatus } from "@/lib/api";
+import { api, type MailerStatus, type SettingsStatus } from "@/lib/api";
 import { useIndustries } from "@/lib/hooks";
 
 const GUARDS = [
-  { title: "Najpierw tryb próbny", body: "Prawdziwa wysyłka wymaga osobnego potwierdzenia." },
-  { title: "Nigdy dwa razy do tej samej osoby", body: "Lista wykluczeń i historia wysyłek sprawdzane przed każdym mailem." },
-  { title: "Link wypisania w każdym mailu", body: "Szablon bez niego nie przejdzie walidacji." },
+  { title: "Każda partia wymaga Twojego potwierdzenia", body: "Program pokazuje, ile maili wyjdzie i ile zostanie na jutro, zanim cokolwiek wyśle." },
+  { title: "Nigdy dwa razy do tej samej firmy", body: "Wykluczenia, lista wypisanych i historia wysyłek sprawdzane tuż przed każdym mailem." },
+  { title: "Podpis i informacja o wypisaniu w każdym mailu", body: "Dokleja je program. Szablon nie może ich usunąć." },
+  { title: "Dzienny limit z rozgrzewaniem skrzynki", body: "10, 15, 25, 35 maili dziennie w pierwszych tygodniach, potem limit z ustawień." },
 ];
 
 export default function UstawieniaPage() {
   const industries = useIndustries();
   const [status, setStatus] = useState<SettingsStatus | null>(null);
+  const [mailer, setMailer] = useState<MailerStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api.settingsStatus().then(setStatus).catch((e: Error) => setError(e.message));
+    api.mailerStatus().then(setMailer).catch(() => {});
   }, []);
 
   return (
@@ -74,22 +77,28 @@ export default function UstawieniaPage() {
           ))}
         </section>
 
-        <section className="panel rise d3 locked" style={{ marginTop: 20, overflow: "hidden" }}>
+        <section className="panel rise d3" style={{ marginTop: 20, overflow: "hidden" }}>
           <div className="phead">
             <div>
-              <h2 className="h2">Skrzynka i limity</h2>
-              <div className="psub">Dostępne w fazie 4.</div>
+              <h2 className="h2">Nadawca i skrzynka</h2>
+              <div className="psub">Też w pliku <code className="code">.env</code>. Podpis z tych danych trafia pod każdy mail.</div>
             </div>
-            <span className="pill pill-mute">faza 4</span>
+            {mailer?.smtp_is_test && <span className="pill pill-accent">tryb testowy</span>}
           </div>
-          <div className="srow">
-            <div style={{ fontWeight: 500, fontSize: 14.5 }}>Domena wysyłkowa</div>
-            <span className="muted" style={{ fontSize: 13 }}>{status?.smtp ? "skonfigurowana" : "nie skonfigurowano"}</span>
-          </div>
-          <div className="srow">
-            <div style={{ fontWeight: 500, fontSize: 14.5 }}>Dzienny limit wysyłki</div>
-            <code className="code">DAILY_SEND_LIMIT</code>
-          </div>
+          <SettingRow label="Imię i nazwisko" env="SENDER_NAME" value={mailer?.sender_name} />
+          <SettingRow label="Adres nadawcy" env="SENDER_EMAIL" value={mailer?.sender_email} hint="Adres na Twojej domenie. Bez niego prawdziwa wysyłka jest zablokowana." />
+          <SettingRow label="Opis w podpisie" env="SENDER_IDENTITY" value={mailer && !mailer.sender_missing.includes("opis w podpisie") ? "uzupełniony" : ""} />
+          <SettingRow
+            label="Skrzynka (SMTP)"
+            env="SMTP_HOST"
+            value={mailer?.smtp_is_test ? "Mailpit, tylko testy (localhost:8025)" : mailer?.smtp_configured ? "podłączona" : ""}
+          />
+          <SettingRow
+            label="Limit dzienny"
+            env="DAILY_SEND_LIMIT"
+            value={mailer ? `dziś ${mailer.cap_today}, docelowo ${mailer.daily_send_limit}` : undefined}
+            hint={mailer && !mailer.warmup_start ? "Ustaw MAILBOX_WARMUP_START na dzień pierwszej wysyłki z nowej skrzynki." : undefined}
+          />
         </section>
 
         <section className="panel rise d3" style={{ marginTop: 20, paddingBottom: 20 }}>
@@ -105,6 +114,27 @@ export default function UstawieniaPage() {
         </section>
       </div>
     </>
+  );
+}
+
+function SettingRow({ label, env, value, hint }: { label: string; env: string; value?: string; hint?: string }) {
+  return (
+    <div className="srow">
+      <div>
+        <div style={{ fontWeight: 500, fontSize: 14.5 }}>{label}</div>
+        <div className="psub">
+          <code className="code">{env}</code>
+          {hint && <span style={{ marginLeft: 8 }}>{hint}</span>}
+        </div>
+      </div>
+      {value === undefined ? (
+        <span className="faint">…</span>
+      ) : value ? (
+        <span style={{ fontSize: 13.5, textAlign: "right" }}>{value}</span>
+      ) : (
+        <span className="pill pill-accent">brak</span>
+      )}
+    </div>
   );
 }
 

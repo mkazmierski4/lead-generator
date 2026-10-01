@@ -31,8 +31,17 @@ najpierw projektujemy tam, dopiero po akceptacji przenosimy do kodu.
 | `/leady` | `app/leady/page.tsx` | zakładki statusu (liczniki ze stats), filtr branży, wyszukiwanie `?q=`, paginacja |
 | `/leady/[id]` | `app/leady/[id]/page.tsx` | karta firmy: pierścień wyniku, rozbicie punktów, ręczny kontakt, wykluczenie |
 | `/znajdz` | `app/znajdz/page.tsx` | discovery; kroki postępu są orientacyjne (API odpowiada jednym wynikiem) |
-| `/kampanie` | `app/kampanie/page.tsx` | statyczny podgląd fazy 4 |
-| `/ustawienia` | `app/ustawienia/page.tsx` | status kluczy z `/settings/status`; klucze trzymamy w `.env`, nie w UI |
+| `/kampanie` | `app/kampanie/page.tsx` | lista kampanii + `MailboxPanel` (nadawca, Mailpit/prawdziwa skrzynka, limit i rozgrzewanie) |
+| `/kampanie/nowa`, `/kampanie/[id]/edytuj` | `components/CampaignEditor.tsx` | gotowe szablony (z "Cofnij"), zmienne wstawiane w miejscu kursora (ostatnio aktywne pole: temat albo treść), podgląd na prawdziwych firmach z podświetlonymi wartościami, informacja czy dana firma w ogóle trafi do kolejki |
+| `/kampanie/[id]` | `app/kampanie/[id]/page.tsx` | kolejka / wysłane (rozwijana treść) / pominięte i błędy, test do siebie, okno potwierdzenia partii z planem z `dry_run`, odpytywanie co 3 s w trakcie wysyłki |
+| `/ustawienia` | `app/ustawienia/page.tsx` | status kluczy, nadawcy i skrzynki; wszystko trzymamy w `.env`, nie w UI |
+
+Dodawanie firm do kampanii: zaznaczanie na `/leady` (pasek na dole, "Zaznacz gotowe do wysyłki",
+`?kampania=<id>` ustawia docelową kampanię) albo przycisk na karcie firmy. Wynik zawsze pokazuje, kto
+został pominięty i dlaczego — backend decyduje, UI tylko to wyświetla.
+
+**Docker na Windows:** dev server w kontenerze nie widzi NOWYCH plików z bind-mounta (zmiany w
+istniejących widzi). Po dodaniu pliku: `docker compose restart web`. Dokumentacja Next odradza polling.
 
 Po każdej zmianie danych (discovery, enrichment, wykluczenie, kontakt) wołaj `notifyLeadsChanged()`
 (`lib/events.ts`) — odświeża liczniki w sidebarze i na Pulpicie.
