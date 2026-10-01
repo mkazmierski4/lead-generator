@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import companies, discovery, enrichment, runs, settings
+from app.routers import campaigns, companies, discovery, enrichment, runs, settings
 
 app = FastAPI(title="Lead Generation API")
 
@@ -12,6 +12,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(campaigns.router)
 app.include_router(companies.router)
 app.include_router(discovery.router)
 app.include_router(enrichment.router)

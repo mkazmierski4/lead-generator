@@ -32,7 +32,17 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Lokalna skrzynka do testów: przechwytuje KAŻDY mail wysłany na SMTP mailpit:1025, nic nie wychodzi
+  # do internetu. Podgląd maili: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.21
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
 
   web:
     build:
