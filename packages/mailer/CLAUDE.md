@@ -1,22 +1,39 @@
 # packages/mailer — wysyłka, warmup, deliverability
 
-**Status: nie zbudowane jeszcze.** Zaplanowane w osobnej sesji (patrz root `CLAUDE.md` → Mailer Engine).
+Czyste funkcje bez bazy danych (tak jak `packages/discovery` i `packages/enrichment`). Orkiestracja,
+kolejka i zabezpieczenia: `apps/api/app/services/mailer_service.py`, endpointy: `apps/api/app/routers/campaigns.py`.
 
-## Zakres modułu
+- `templates.py` — zmienne szablonu (`VARIABLES`: firma, miasto, branza, problem, strona, nadawca),
+  walidacja (nieznana zmienna = błąd przy zapisie kampanii), `render`, frazy `{{problem}}` dopasowane do
+  konstrukcji "zauważyłem, że …", oraz `footer()` — stopka nadawcy.
+- `warmup.py` — `daily_cap()`: 10 / 15 / 25 / 35 maili dziennie w tygodniach 1–4 od
+  `MAILBOX_WARMUP_START`, potem `DAILY_SEND_LIMIT`. Brak daty = skrzynka traktowana jako nowa.
+- `smtp.py` — wiadomość czysto tekstowa (lepiej dochodzi przy cold mailingu), nagłówek
+  `List-Unsubscribe: <mailto:…?subject=wypisz>`, STARTTLS jeśli serwer go oferuje.
 
-Silnik wysyłki kampanii: renderowanie szablonu (`Campaign.subject_template`/`body_template` +
-zmienne per firma), rate limiter z harmonogramem warmupu (`DAILY_SEND_LIMIT`), wysyłka SMTP z
-opóźnieniami między mailami, obsługa bounce'ów i odpowiedzi (IMAP), integracja z Google Postmaster
-Tools do monitoringu reputacji.
+## Twarde zasady (egzekwowane w `mailer_service.py`, nie w UI)
 
-## Twarde zasady (egzekwowane w kodzie tego modułu, nie tylko w UI)
+1. Przed KAŻDYM mailem (nie tylko przy dodawaniu do kolejki) ponownie: `Company.excluded_at`,
+   `suppression_list` po adresie, oraz czy ta firma LUB ten adres dostały już wiadomość z jakiejkolwiek
+   kampanii. Trafienie = status `SKIPPED` z powodem, mail nie wychodzi.
+2. `send_campaign(..., dry_run=True)` domyślnie tylko liczy plan. Prawdziwa wysyłka wymaga `dry_run=False`
+   ORAZ uzupełnionych `SENDER_NAME`, `SENDER_EMAIL`, `SENDER_IDENTITY` i `SMTP_HOST`.
+3. Dzienny limit liczony z `send_log` (statusy z `DELIVERED_STATUSES`, doba wg Europe/Warsaw) twardo
+   zatrzymuje pętlę wysyłki, niezależnie od długości kolejki.
+4. **Stopkę z danymi nadawcy i instrukcją wypisania dokleja silnik do każdego maila** — szablon nie musi
+   (i nie może) jej zawierać ani usunąć. To mocniejsze niż walidacja placeholdera: nie da się o niej zapomnieć.
+   Wypisanie przez odpowiedź "wypisz", bo aplikacja działa lokalnie i link http byłby nieosiągalny.
+5. Domyślnie do kolejki trafiają tylko adresy potwierdzone (znalezione na stronie albo dopisane ręcznie).
+   Odgadnięte (`kontakt@domena`) tylko gdy kampania ma `allow_guessed_emails=True`.
+6. Kampanii, z której wyszedł choć jeden mail, nie da się usunąć — jej `send_log` chroni przed ponownym
+   kontaktem z tymi samymi firmami.
 
-1. Przed wysyłką do kontaktu: sprawdzenie `suppression_list` (po e-mailu) ORAZ `send_log`
-   (czy ten `contact_id` już ma wpis w tej kampanii — unikalny constraint w DB to ostatnia linia
-   obrony, ale logika aplikacji musi to sprawdzać wcześniej i po prostu pominąć kontakt).
-2. Każda funkcja wysyłająca ma domyślny `dry_run=True` — realna wysyłka wymaga jawnego
-   przekazania `dry_run=False` przez wywołującego.
-3. Rate limiter liczy wysłane maile per dzień per skrzynka i twardo blokuje przekroczenie
-   `DAILY_SEND_LIMIT` niezależnie od tego, ile leadów czeka w kolejce.
-4. Każdy szablon musi zawierać placeholder na link wypisania i dane nadawcy — walidacja przy
-   tworzeniu kampanii powinna to wymuszać, nie tylko dokumentacja.
+## Testowanie
+
+Docker Compose ma Mailpit (SMTP `mailpit:1025`, podgląd http://localhost:8025) — wszystko, co tam
+wyślesz, zostaje lokalnie. Po testach z prawdziwymi firmami z rejestru **usuń testowe wpisy z `send_log`**,
+inaczej te firmy zostaną na zawsze oznaczone jako "już kontaktowane".
+
+## Jeszcze nie ma (faza 5)
+
+Wykrywanie odpowiedzi i "wypisz" (IMAP), obsługa odbić, monitoring reputacji (Google Postmaster Tools).
