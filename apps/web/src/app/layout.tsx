@@ -1,23 +1,12 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Source_Serif_4 } from "next/font/google";
+import { Schibsted_Grotesk } from "next/font/google";
+import { Sidebar } from "@/components/Sidebar";
 import "./globals.css";
 
-const serif = Source_Serif_4({
-  variable: "--font-serif",
+const font = Schibsted_Grotesk({
+  variable: "--font-app",
   subsets: ["latin", "latin-ext"],
-  weight: ["500", "600"],
-});
-
-const sans = IBM_Plex_Sans({
-  variable: "--font-sans",
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600"],
-});
-
-const mono = IBM_Plex_Mono({
-  variable: "--font-mono",
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -27,8 +16,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pl" className={`${serif.variable} ${sans.variable} ${mono.variable} h-full`}>
-      <body className="min-h-full bg-paper text-ink font-sans antialiased">{children}</body>
+    <html lang="pl" className={font.variable}>
+      <body>
+        <div className="app">
+          <Sidebar />
+          <main className="sheet">{children}</main>
+        </div>
+      </body>
     </html>
   );
 }

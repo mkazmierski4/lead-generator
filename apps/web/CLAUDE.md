@@ -1,43 +1,44 @@
 @AGENTS.md
 
-## apps/web — dashboard (Next.js)
+## apps/web — dashboard (Next.js 16, App Router)
 
-Konwencje: App Router, TypeScript, Tailwind. Komunikacja z backendem wyłącznie przez
-`NEXT_PUBLIC_API_URL` (patrz `src/lib/api.ts`) — nigdy bezpośrednio z bazą danych. Dashboard to
-komponent kliencki (`"use client"`), fetchuje po stronie przeglądarki wprost do opublikowanego
-portu API (`localhost:8000`) -- w przeciwieństwie do ewentualnych Server Components, przeglądarka
-nie ma dostępu do wewnątrz-sieciowego adresu Dockera (`API_INTERNAL_URL`), więc nie ma tu tego
-samego problemu co z pierwotną stroną startową z Fazy 0.
+Wszystkie ekrany to komponenty klienckie fetchujące z przeglądarki wprost do opublikowanego portu API
+(`NEXT_PUBLIC_API_URL`, domyślnie `localhost:8000`) przez `src/lib/api.ts` (obiekt `api`). Nigdy
+bezpośrednio z bazą danych. `useSearchParams` wymaga granicy `<Suspense>` (patrz `app/leady/page.tsx`).
 
-## Design: "rejestr inspekcyjny"
+## Źródło prawdy dla wyglądu
 
-Dashboard to narzędzie robocze (używane codziennie do przeglądania dziesiątek leadów), nie strona
-marketingowa -- stąd układ rejestru/listy (nie kart z cieniami), gęsty ale czytelny, z pełnym
-uzasadnieniem każdego wyniku rozwijanym pod wierszem (`Company.score_explanation` nie może być
-czarną skrzynką -- to wymóg z `packages/enrichment/CLAUDE.md`).
+Zatwierdzona makieta: https://claude.ai/artifact/GEZWGLwvLrFqMvB6e4XAjv (canvas z 6 ekranami). Nowe ekrany
+najpierw projektujemy tam, dopiero po akceptacji przenosimy do kodu.
 
-- **Kolor** (`globals.css`, tokeny `--paper`/`--ink`/`--signal`): papierowa stonowana
-  zieleń-szarość + ciepła bliska-czerń + jeden akcent (ceglasta czerwień) zarezerwowany
-  wyłącznie dla leadów "gotowych do kontaktu" (`lib/labels.ts::isActionable`). Ma wariant dark mode.
-  Świadomie NIE kremowo-terakotowy i NIE czarno-neonowy -- to dwa najczęstsze domyślne schematy AI.
-- **Typografia** (`layout.tsx`, `next/font/google`): Source Serif 4 na nazwy firm/tytuł, IBM Plex
-  Sans na UI, IBM Plex Mono tylko na kolumnę wyniku (jedyne miejsce z faktycznie tabelarycznymi
-  danymi -- mono nie jest tu dekoracją domyślną).
-- Każdy interaktywny element ma `focus-visible` (nie tylko domyślny outline przeglądarki) --
-  pilnować tego przy dodawaniu nowych przycisków/linków.
+- **Czcionka:** jedna rodzina, Schibsted Grotesk (`layout.tsx`, zmienna `--font-app`). Bez serifu i bez
+  monospace; liczby przez klasę `.num` (cyfry tabelaryczne).
+- **Kolory i tokeny:** `globals.css` `:root` — ciemna rama (`--frame`), jasny arkusz (`--sheet`), panele
+  (`--surface`), jeden akcent ochry (`--accent`) dla leadów do działania, zieleń (`--positive`) dla
+  "strona działa". Świadomie bez kremowo-terakotowego i czarno-neonowego schematu.
+- **Komponenty CSS** (też w `globals.css`): `.panel`, `.btn-*`, `.pill-*`, `.mono-*`, `.seg`, `.lrow`,
+  `.tile`, `.switch`, `.run`, `.why`, `.fact`, `.tl` — reużywaj ich zamiast pisać nowe style inline.
+- **Ruch:** jedna sekwencja wejścia (`.rise .d1-.d3`), liczniki `useCountUp`, rosnące paski (`.fill`),
+  pierścień wyniku, płynne rozwijanie wierszy. Wszystko wyłączone przy `prefers-reduced-motion`.
+- **Dostępność:** `:focus-visible` globalnie, `aria-expanded`/`aria-current`/`role="switch"`,
+  potwierdzenie wykluczenia przez drugi klik zamiast `window.confirm`.
 
-## Komponenty
+## Ekrany
 
-- `app/page.tsx` — orkiestracja: stan filtrów, paginacja (`limit`/`offset`), fetch przy zmianie
-  filtrów.
-- `components/LeadRow.tsx` — wiersz rejestru, rozwijany do pełnej listy powodów scoringu + adresu/
-  strony/źródła.
-- `components/FilterBar.tsx` — branża / status strony / kraj / min. wynik.
-- `components/DiscoveryPanel.tsx` — formularz uruchamiający `POST /discovery/run` (kraj, miasto,
-  branża, źródła OSM/Google Places).
-- `components/EnrichmentButton.tsx` — uruchamia `POST /enrichment/run`.
+| Trasa | Plik | Uwagi |
+|---|---|---|
+| `/` | `app/page.tsx` | Pulpit: liczniki ze `/companies/stats`, top 4 leady, oś aktywności z `/runs` |
+| `/leady` | `app/leady/page.tsx` | zakładki statusu (liczniki ze stats), filtr branży, wyszukiwanie `?q=`, paginacja |
+| `/leady/[id]` | `app/leady/[id]/page.tsx` | karta firmy: pierścień wyniku, rozbicie punktów, ręczny kontakt, wykluczenie |
+| `/znajdz` | `app/znajdz/page.tsx` | discovery; kroki postępu są orientacyjne (API odpowiada jednym wynikiem) |
+| `/kampanie` | `app/kampanie/page.tsx` | statyczny podgląd fazy 4 |
+| `/ustawienia` | `app/ustawienia/page.tsx` | status kluczy z `/settings/status`; klucze trzymamy w `.env`, nie w UI |
 
-Zweryfikowane: `tsc --noEmit` i `next lint` czyste, strona renderuje się i realnie łączy z API
-(dane testowe z Zakopanego z Fazy 1/2). Bez zrzutu ekranu (brak narzędzi przeglądarki w tym
-środowisku) -- jeśli coś wygląda źle wizualnie, daj znać, żeby to poprawić.
+Po każdej zmianie danych (discovery, enrichment, wykluczenie, kontakt) wołaj `notifyLeadsChanged()`
+(`lib/events.ts`) — odświeża liczniki w sidebarze i na Pulpicie.
 
+## Świadome odstępstwa od makiety
+
+- Ustawienia nie mają pól do wpisania klucza API — klucze nie powinny przechodzić przez przeglądarkę ani
+  lądować w bazie; UI pokazuje status i nazwę zmiennej w `.env`.
+- Filtr "Kraj" pominięty, dopóki rejestr ma tylko PL (wróci w fazie 6).

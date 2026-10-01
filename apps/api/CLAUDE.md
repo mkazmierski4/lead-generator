@@ -59,7 +59,22 @@ omijać ich przy budowie `packages/mailer`.
   po pełne reguły. Firma już obecna w `send_log` dostaje mocno ujemny score zamiast być usuwana z bazy
   (zostaje widoczna/audytowalna, po prostu spada na dół listy).
 
+## Pod dashboard (Faza 3) — zbudowane
+
+- `GET /companies/stats?country&industry&q` — `{total, ready, enriched, awaiting_enrichment, by_status}`.
+  `ready` = status brak/nie działa/przestarzała ORAZ `score > 0`. Zarejestrowany przed `/{company_id}`.
+- `GET /companies?q=` — wyszukiwanie po nazwie lub mieście (ILIKE).
+- **Wykluczone firmy (`excluded_at`) są pomijane wszędzie**: lista, statystyki, eksport, enrichment.
+  `POST /companies/{id}/exclude` ustawia `excluded_at` i dopisuje e-maile firmy do `suppression_list`
+  (powód `manual`). Brak endpointu cofającego — świadomie, w UI to "wyklucz na stałe". Mailer (faza 4)
+  musi respektować `excluded_at` tak samo jak suppression list.
+- `POST /companies/{id}/contacts` `{email?, phone?}` — ręczny kontakt (`source=manual`, `verified`),
+  po czym `enrichment_service.rescore()` przelicza wynik, zachowując obserwacje ze sprawdzenia strony.
+- `GET /runs?kind=&limit=` — historia uruchomień discovery/enrichment (tabela `runs`, JSONB `params`
+  i `result`), zapisywana w `discovery_service` i `enrichment_service`.
+- `GET /settings/status` — tylko czy klucze są ustawione w `.env` (nigdy ich wartości).
+
 ## Co jeszcze nie istnieje (kolejne etapy)
 
 Konektor CEIDG (`registered_at`) — zablokowany na weryfikacji API, patrz `packages/enrichment/CLAUDE.md`.
-Endpointy do kampanii/wysyłki — `packages/mailer` (Faza 4). Pełny UI dashboardu — Faza 3.
+Endpointy do kampanii/wysyłki — `packages/mailer` (Faza 4).

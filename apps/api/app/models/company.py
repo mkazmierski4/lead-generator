@@ -64,5 +64,7 @@ class Company(TimestampMixin, Base):
     # scoring nie może być czarną skrzynką, dashboard musi umieć pokazać "dlaczego taki wynik".
     score_explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
     enriched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Ręczne "nie kontaktuj tej firmy". Mailer musi to respektować tak samo jak suppression_list.
+    excluded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     contacts: Mapped[list["Contact"]] = relationship(back_populates="company", cascade="all, delete-orphan")

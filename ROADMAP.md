@@ -73,16 +73,19 @@ domeną → `dead`; firma z działającą nowoczesną stroną → `ok`, score ni
 Cel: wygodny, ładny UI do przeglądania/filtrowania/zatwierdzania leadów — zanim cokolwiek
 wyśle się automatycznie.
 
-- [x] Lista leadów z filtrami: kraj, branża, `website_status`, min. score (+ paginacja).
-- [x] Widok szczegółów firmy — dane kontaktowe, źródło, pełne uzasadnienie score'u (rozwijany wiersz).
-- [x] Uruchamianie discovery i enrichment wprost z UI (bez `curl`/Swaggera), eksport CSV.
-- [x] Świadomy design pass — koncepcja "rejestr inspekcyjny", patrz `apps/web/CLAUDE.md`.
-- [ ] Ręczne zatwierdzanie/odrzucanie leadów do kolejki kampanii — czeka na `packages/mailer`
-      (Faza 4), bo dopóki nie ma kampanii, nie ma do czego kolejkować.
+- [x] Makieta całej aplikacji zatwierdzona przed kodem: https://claude.ai/artifact/GEZWGLwvLrFqMvB6e4XAjv
+- [x] Pulpit: liczniki, najlepsze leady, oś aktywności (historia uruchomień w tabeli `runs`).
+- [x] Leady: zakładki statusu z licznikami, filtr branży, wyszukiwanie (Ctrl K), paginacja, rozwijane
+      uzasadnienie wyniku, eksport CSV, wzbogacanie z UI.
+- [x] Karta firmy: rozbicie punktów, obserwacje ze sprawdzenia strony, ręczny kontakt (przelicza wynik),
+      wykluczenie na stałe (trafia też do `suppression_list`).
+- [x] Znajdź leady: kafelki branż, źródła, przebieg wyszukiwania, historia wyszukiwań.
+- [x] Kampanie (podgląd fazy 4) i Ustawienia (status kluczy, zabezpieczenia wysyłki).
+- [ ] Zatwierdzanie leadów do kolejki kampanii — czeka na `packages/mailer` (Faza 4).
 
-**Zweryfikowane:** `tsc --noEmit` i `next lint` czyste, strona renderuje się i łączy z realnym API
-(dane z Zakopanego z Fazy 1/2). Bez zrzutu ekranu -- w tym środowisku CLI nie było dostępnego
-narzędzia przeglądarki do wizualnej kontroli; jeśli coś wygląda źle, zgłoś to do poprawki.
+**Zweryfikowane:** `next build`, `tsc`, `lint` czyste; wszystkie trasy zwracają 200; realne wywołania
+(discovery piekarni w Zakopanem, wzbogacanie, ręczny kontakt 30→50 pkt, wykluczenie). Po drodze
+wymienione martwe mirrory Overpass. Wizualnie zweryfikowane tylko przez makietę.
 
 Da się od zera, z poziomu przeglądarki, przejrzeć wyniki Fazy 1+2 i wybrać 20-50 leadów do pierwszej
 kampanii -- brakuje tylko przycisku "zakolejkuj do kampanii", bo kampanie jeszcze nie istnieją.

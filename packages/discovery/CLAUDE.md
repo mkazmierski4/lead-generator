@@ -30,8 +30,10 @@ Planowane konektory (kolejność wg planu):
   `run_discovery` po prostu pomija to źródło (`skipped_sources`), nie wywala całego runu.
 - **Uwaga o stabilności:** darmowa, publiczna instancja `overpass-api.de` bywa niestabilna pod
   obciążeniem (widziane: 406, 504, connect timeout przy zbyt częstych zapytaniach pod rząd).
-  `osm.py` próbuje po kolei kilku mirrorów (`OVERPASS_URLS`). Nie odpytywać jej w pętli/testach
-  bez potrzeby — to współdzielony darmowy zasób.
+  `osm.py` próbuje po kolei serwerów klastra `overpass-api.de` (`OVERPASS_URLS`: główny, `lz4.`, `z.`)
+  z 2-sekundową przerwą, ponawiając tylko błędy przeciążenia (429/5xx) i błędy sieci. Zewnętrzne
+  mirrory (`overpass.kumi.systems`, `overpass.openstreetmap.ru`) zostały usunięte — w 10.2026 przestały
+  odpowiadać. Nie odpytywać Overpass w pętli/testach bez potrzeby — to współdzielony darmowy zasób.
 - `industries.py` — startowy zestaw 8 branż (fryzjer, salon kosmetyczny, restauracja, kawiarnia,
   warsztat samochodowy, dentysta, kwiaciarnia, piekarnia). Dodawanie kolejnej branży = jeden wpis
   w `INDUSTRIES` z tagiem OSM + typem Google Places, o ile jest to dobrze otagowane w OSM.

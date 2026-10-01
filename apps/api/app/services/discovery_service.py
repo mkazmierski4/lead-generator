@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.company import Company, LeadSource, WebsiteStatus
+from app.models.run import Run, RunKind
 from discovery.base import DiscoveryConfigError
 from discovery.google_places import GooglePlacesConnector
 from discovery.models import RawLead
@@ -75,6 +76,18 @@ def run_discovery(db: Session, country: str, city: str, industry: str, sources: 
         )
         result.created += 1
 
+    db.add(
+        Run(
+            kind=RunKind.DISCOVERY,
+            params={"country": country, "city": city, "industry": industry, "sources": sources},
+            result={
+                "found": result.found,
+                "created": result.created,
+                "skipped_duplicate": result.skipped_duplicate,
+                "skipped_sources": result.skipped_sources,
+            },
+        )
+    )
     db.commit()
     return result
 

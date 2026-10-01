@@ -1,16 +1,21 @@
+import time
+
 import httpx
 
 from .geocoding import BoundingBox, geocode
 from .industries import get_industry
 from .models import RawLead
 
-# Publiczna instancja overpass-api.de bywa niestabilna (bywają 406/504 pod obciążeniem) --
-# próbujemy po kolei kilku publicznych mirrorów zamiast polegać na jednym punkcie awarii.
+# Publiczny klaster overpass-api.de bywa przeciążony (504/429), a zewnętrzne mirrory typu
+# kumi.systems przestały odpowiadać (zweryfikowane 2026-10). Używamy serwerów tego samego
+# klastra i ponawiamy chwilowe błędy przeciążenia, zamiast od razu się poddawać.
 OVERPASS_URLS = [
     "https://overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
-    "https://overpass.openstreetmap.ru/api/interpreter",
+    "https://lz4.overpass-api.de/api/interpreter",
+    "https://z.overpass-api.de/api/interpreter",
 ]
+RETRYABLE_STATUS = {429, 502, 503, 504}
+RETRY_DELAY_S = 2.0
 
 
 def _build_query(bbox: BoundingBox, osm_tags: list[tuple[str, str]]) -> str:
@@ -39,20 +44,25 @@ def _extract_address(tags: dict[str, str]) -> str | None:
 
 def _query_overpass(query: str) -> list[dict]:
     last_error: Exception | None = None
-    for url in OVERPASS_URLS:
+    for attempt, url in enumerate(OVERPASS_URLS):
+        if attempt:
+            time.sleep(RETRY_DELAY_S)
         try:
             response = httpx.post(
                 url,
                 data={"data": query},
                 headers={"User-Agent": "lead-generator-mvp/0.1"},
-                timeout=15.0,
+                timeout=30.0,
             )
             response.raise_for_status()
             return response.json().get("elements", [])
-        except (httpx.HTTPStatusError, httpx.TransportError) as exc:
+        except httpx.HTTPStatusError as exc:
             last_error = exc
-            continue
-    raise RuntimeError(f"Wszystkie mirrory Overpass zawiodły: {last_error}") from last_error
+            if exc.response.status_code not in RETRYABLE_STATUS:
+                break
+        except httpx.TransportError as exc:
+            last_error = exc
+    raise RuntimeError(f"Overpass nie odpowiada: {last_error}") from last_error
 
 
 class OverpassConnector:

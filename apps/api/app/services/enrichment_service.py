@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.company import Company, WebsiteStatus
 from app.models.contact import Contact, ContactSource
+from app.models.run import Run, RunKind
 from app.models.send_log import SendLog
 from enrichment.email_finder import find_in_html, guess_pattern
 from enrichment.models import EmailFindResult
@@ -22,11 +24,15 @@ class EnrichmentRunResult:
 
 
 def run_enrichment(db: Session, limit: int = 50) -> EnrichmentRunResult:
-    companies = db.execute(select(Company).where(Company.enriched_at.is_(None)).limit(limit)).scalars().all()
+    companies = db.execute(
+        select(Company).where(Company.enriched_at.is_(None), Company.excluded_at.is_(None)).limit(limit)
+    ).scalars().all()
 
     for company in companies:
         _enrich_company(db, company)
 
+    if companies:
+        db.add(Run(kind=RunKind.ENRICHMENT, params={"limit": limit}, result={"processed": len(companies)}))
     db.commit()
     return EnrichmentRunResult(processed=len(companies))
 
@@ -65,6 +71,22 @@ def _enrich_company(db: Session, company: Company) -> None:
     company.score = score
     company.score_explanation = "; ".join(reasons + score_reasons)
     company.enriched_at = datetime.now(timezone.utc)
+
+
+_POINTS_SUFFIX = re.compile(r"\([+-]\d+(\.\d+)?\)$")
+
+
+def rescore(db: Session, company: Company) -> None:
+    """Przelicza wynik po ręcznej zmianie (np. dopisanym kontakcie), zachowując obserwacje ze sprawdzenia strony."""
+    if company.enriched_at is None:
+        return
+    observations = [
+        part for part in (company.score_explanation or "").split("; ")
+        if part and not _POINTS_SUFFIX.search(part)
+    ]
+    score, score_reasons = _score(db, company)
+    company.score = score
+    company.score_explanation = "; ".join(observations + score_reasons)
 
 
 _STATUS_POINTS: dict[WebsiteStatus, tuple[float, str]] = {

@@ -72,11 +72,14 @@ fallback na odgadnięty wzorzec), scoring z pełnym, czytelnym uzasadnieniem (`C
 nie zgadywałem kształtu zapytania bez możliwości przetestowania go na żywo (szczegóły i jak to
 dokończyć: `packages/enrichment/CLAUDE.md`).
 
-**Etap 3 (Dashboard): gotowy.** Rejestr leadów (lista + filtry branża/status strony/kraj/min. wynik),
-rozwijane wiersze z pełnym uzasadnieniem score'u, panel uruchamiający discovery i enrichment wprost
-z UI, eksport CSV. Design: patrz `apps/web/CLAUDE.md` ("rejestr inspekcyjny" -- papier+atrament+jeden
-akcent, Source Serif 4 / IBM Plex Sans / IBM Plex Mono). `tsc`/`lint` czyste, brak wizualnej
-weryfikacji zrzutem ekranu (brak narzędzi przeglądarki w tym środowisku).
+**Etap 3 (Dashboard): gotowy.** Przeniesiony 1:1 z zatwierdzonej makiety
+(https://claude.ai/artifact/GEZWGLwvLrFqMvB6e4XAjv): Pulpit, Leady (zakładki statusu, wyszukiwanie,
+rozwijane uzasadnienie), karta firmy (pierścień wyniku, ręczny kontakt, wykluczenie), Znajdź leady
+(kafelki branż, przebieg wyszukiwania, historia), Kampanie (podgląd fazy 4), Ustawienia. Backend
+dostał pod to `/companies/stats`, `/runs`, wykluczanie firm, ręczne kontakty i `/settings/status`.
+Szczegóły: `apps/web/CLAUDE.md`, `apps/api/CLAUDE.md`. Nowe ekrany: najpierw makieta, potem kod.
+Zweryfikowane buildem, `tsc`, `lint` i realnymi wywołaniami API; wizualnie tylko przez makietę
+(w tym środowisku nie ma przeglądarki do zrzutów ekranu).
 
 **Następny etap: Mailer Engine** (Faza 4 z `ROADMAP.md`) — to już wymaga Twojej decyzji o domenie/
 skrzynce pod cold mailing, patrz tabela "czego będę potrzebować" w `ROADMAP.md`.
